@@ -213,6 +213,19 @@ class TestAskEndpoint:
         assert r.json()["intent"] == "LOCATE_OBJECT"
         assert r.json()["object"] == "moon"
 
+    def test_locate_north_star_alias(self):
+        # Regression: "north star" must resolve to polaris via the alias table,
+        # not fall through to UNKNOWN.
+        r = self._ask("Where is the north star?")
+        assert r.json()["intent"] == "LOCATE_OBJECT"
+        assert r.json()["object"] == "polaris"
+        assert "north star" in r.json()["answer"].lower()
+
+    def test_locate_evening_star_alias(self):
+        r = self._ask("Where is the evening star?")
+        assert r.json()["intent"] == "LOCATE_OBJECT"
+        assert r.json()["object"] == "venus"
+
     def test_locate_answer_ends_with_period(self):
         r = self._ask("Where is Venus?")
         assert r.json()["answer"].endswith(".")
