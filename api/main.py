@@ -311,7 +311,22 @@ def health():
 _SKY_OBJECTS = [
     "sun", "moon", "mercury", "venus", "mars",
     "jupiter", "saturn", "uranus", "neptune",
+    # Bright stars
+    "polaris", "sirius", "canopus", "arcturus",
+    "vega", "betelgeuse", "rigel", "antares",
 ]
+
+# Multi-word aliases checked before single-word scan
+_SKY_ALIASES: dict[str, str] = {
+    "north star":     "polaris",
+    "pole star":      "polaris",
+    "lodestar":       "polaris",
+    "dog star":       "sirius",
+    "evening star":   "venus",
+    "morning star":   "venus",
+    "the moon":       "moon",
+    "scorpion heart": "antares",
+}
 
 _LOCATE_KEYWORDS  = ["where", "find", "show", "locate", "position", "direction"]
 _VISIBLE_KEYWORDS = ["visible", "can i see", "see tonight", "is it up", "rise", "set"]
@@ -332,8 +347,14 @@ def _simple_intent_match(text: str) -> tuple[str, Optional[str]]:
     if any(kw in text for kw in _WEATHER_KEYWORDS):
         return "WEATHER_SUMMARY", None
 
-    # Find which sky object is mentioned
-    mentioned = next((obj for obj in _SKY_OBJECTS if obj in text), None)
+    # Find which sky object is mentioned.
+    # Multi-word aliases ("north star", "dog star", ...) are checked first so
+    # they resolve before the single-word name scan.
+    mentioned = next(
+        (_SKY_ALIASES[alias] for alias in _SKY_ALIASES if alias in text), None
+    )
+    if mentioned is None:
+        mentioned = next((obj for obj in _SKY_OBJECTS if obj in text), None)
     if mentioned is None and "the moon" in text:
         mentioned = "moon"
 

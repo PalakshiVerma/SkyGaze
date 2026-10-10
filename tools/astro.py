@@ -22,6 +22,46 @@ from datetime import datetime, timezone
 from typing import Optional
 
 
+# ── Fixed stars: RA (hours), Dec (degrees), distance (light-years) ───────────
+#
+# astronomy-engine supports up to 8 user-defined stars (Star1..Star8).
+# We define the most commonly asked-about bright stars here.
+# RA/Dec are J2000 equatorial coordinates.
+
+_STAR_CATALOGUE: list[tuple[astronomy.Body, str, str, float, float, float]] = [
+    # (Body,           key,           display name,        RA hrs,   Dec °,   dist ly)
+    (astronomy.Body.Star1, "polaris",   "Polaris (North Star)",  2.5303,  89.2641, 447.0),
+    (astronomy.Body.Star2, "sirius",    "Sirius",                6.7525, -16.7161,   8.6),
+    (astronomy.Body.Star3, "canopus",   "Canopus",               6.3992, -52.6957, 310.0),
+    (astronomy.Body.Star4, "arcturus",  "Arcturus",             14.2610,  19.1822,  37.0),
+    (astronomy.Body.Star5, "vega",      "Vega",                 18.6157,  38.7837,  25.0),
+    (astronomy.Body.Star6, "betelgeuse","Betelgeuse",            5.9195,   7.4071, 700.0),
+    (astronomy.Body.Star7, "rigel",     "Rigel",                 5.2423,  -8.2017, 860.0),
+    (astronomy.Body.Star8, "antares",   "Antares",              16.4901, -26.4320, 550.0),
+]
+
+# Register all stars with the library at import time
+for _body, _key, _name, _ra, _dec, _dist in _STAR_CATALOGUE:
+    astronomy.DefineStar(_body, _ra, _dec, _dist)
+
+# Build star key → Body and display name lookups
+_STAR_BODY_MAP:    dict[str, astronomy.Body] = {k: b for b, k, *_ in _STAR_CATALOGUE}
+_STAR_DISPLAY_MAP: dict[str, str]            = {k: n for _, k, n, *_ in _STAR_CATALOGUE}
+
+# Common aliases that map to a canonical star key
+_STAR_ALIASES: dict[str, str] = {
+    "north star":    "polaris",
+    "pole star":     "polaris",
+    "lodestar":      "polaris",
+    "dog star":      "sirius",
+    "evening star":  "venus",   # Venus alias — routes to planet
+    "morning star":  "venus",
+    "scorpion heart":"antares",
+    "hunter shoulder":"betelgeuse",
+    "hunter foot":   "rigel",
+}
+
+
 # ── Object name → astronomy.Body mapping ────────────────────────────────────
 
 _BODY_MAP: dict[str, astronomy.Body] = {
@@ -33,27 +73,30 @@ _BODY_MAP: dict[str, astronomy.Body] = {
     # Planets
     "mercury":   astronomy.Body.Mercury,
     "venus":     astronomy.Body.Venus,
-    "earth":     astronomy.Body.Earth,   # included for completeness; altitude = 0 always
+    "earth":     astronomy.Body.Earth,
     "mars":      astronomy.Body.Mars,
     "jupiter":   astronomy.Body.Jupiter,
     "saturn":    astronomy.Body.Saturn,
     "uranus":    astronomy.Body.Uranus,
     "neptune":   astronomy.Body.Neptune,
+    # Stars (merged in)
+    **_STAR_BODY_MAP,
 }
 
-# Human-friendly display names (capitalised correctly)
+# Human-friendly display names
 _DISPLAY_NAME: dict[str, str] = {
-    "sun":      "the Sun",
-    "moon":     "the Moon",
-    "the moon": "the Moon",
-    "mercury":  "Mercury",
-    "venus":    "Venus",
-    "earth":    "Earth",
-    "mars":     "Mars",
-    "jupiter":  "Jupiter",
-    "saturn":   "Saturn",
-    "uranus":   "Uranus",
-    "neptune":  "Neptune",
+    "sun":       "the Sun",
+    "moon":      "the Moon",
+    "the moon":  "the Moon",
+    "mercury":   "Mercury",
+    "venus":     "Venus",
+    "earth":     "Earth",
+    "mars":      "Mars",
+    "jupiter":   "Jupiter",
+    "saturn":    "Saturn",
+    "uranus":    "Uranus",
+    "neptune":   "Neptune",
+    **_STAR_DISPLAY_MAP,
 }
 
 # Objects for which we never expect a below-horizon answer to be surprising
@@ -102,6 +145,9 @@ def get_position(
     """
     # ── Normalise input ──────────────────────────────────────────────────────
     key = object_name.strip().lower()
+
+    # Resolve common aliases ("north star" → "polaris", "evening star" → "venus")
+    key = _STAR_ALIASES.get(key, key)
 
     if key not in _BODY_MAP:
         return {
