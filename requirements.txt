@@ -1,0 +1,29 @@
+# Core astronomy
+astronomy-engine==2.1.19
+skyfield==1.49
+
+# Backend
+fastapi==0.115.0
+uvicorn[standard]==0.30.6
+
+# LLM / AI
+openai-whisper==20231117
+ollama==0.3.3
+
+# Satellite
+sgp4==2.23
+
+# Voice output
+pyttsx3==2.90
+gTTS==2.5.1
+
+# Frontend
+streamlit==1.39.0
+
+# Utilities
+python-dotenv==1.0.1
+requests==2.32.3
+httpx==0.27.2
+
+# Testing
+pytest==8.3.3
